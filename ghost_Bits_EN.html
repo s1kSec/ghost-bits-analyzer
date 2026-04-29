@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ghost Bits Analysis Toolkit</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --bg: #f5f7fa;
+            --card: #ffffff;
+            --text: #333333;
+            --title: #2c3e50;
+            --line: #dde4ec;
+            --primary: #3498db;
+            --primary-hover: #2980b9;
+            --success: #27ae60;
+            --success-hover: #1f8a4d;
+            --muted: #6b7785;
+            --panel: #2b2b2b;
+            --panel-text: #a9b7c6;
+            --chip-bg: #f3f7fb;
+            --chip-active: #e1f0ff;
+            --chip-border: #cfe0f0;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 24px;
+            font-family: system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .page {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1, h2 {
+            margin-top: 0;
+            color: var(--title);
+        }
+
+        p {
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            align-items: start;
+        }
+
+        .full-width {
+            grid-column: auto;
+        }
+
+        .card {
+            background: var(--card);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+        }
+
+        .section-split {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+            align-items: start;
+            margin-top: 12px;
+        }
+
+        .section-column {
+            min-width: 0;
+        }
+
+        .controls-stack,
+        .output-stack {
+            display: grid;
+            gap: 10px;
+            align-content: start;
+            height: 100%;
+        }
+
+        .floating-actions {
+            position: fixed;
+            top: 18px;
+            right: 18px;
+            z-index: 20;
+            display: grid;
+            gap: 10px;
+        }
+
+        .lang-switch,
+        .source-download {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 44px;
+            padding: 10px 16px;
+            border-radius: 999px;
+            background: rgba(44, 62, 80, 0.92);
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: 600;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18);
+            transition: transform 0.2s ease, background-color 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .source-download {
+            background: rgba(39, 174, 96, 0.94);
+        }
+
+        .lang-switch:hover,
+        .source-download:hover {
+            transform: translateY(-1px);
+        }
+
+        .lang-switch:hover {
+            background: #1f2f3f;
+        }
+
+        .source-download:hover {
+            background: #1f8a4d;
+        }
+
+        .input-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            margin-top: 12px;
+        }
+
+        .input-row.compact {
+            align-items: stretch;
+        }
+
+        input,
+        textarea,
+        button {
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--line);
+            font-size: 16px;
+        }
+
+        input,
+        textarea {
+            background: #ffffff;
+            color: var(--text);
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        button {
+            background: var(--primary);
+            color: #ffffff;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        button:hover {
+            background: var(--primary-hover);
+        }
+
+        button.success {
+            background: var(--success);
+        }
+
+        button.success:hover {
+            background: var(--success-hover);
+        }
+
+        .result-box {
+            margin-top: 12px;
+            padding: 15px;
+            border-radius: 8px;
+            background: var(--panel);
+            color: var(--panel-text);
+            font-family: Consolas, "Courier New", monospace;
+            white-space: pre-wrap;
+            word-break: break-all;
+            min-height: 58px;
+            user-select: text;
+            cursor: text;
+            overflow: auto;
+        }
+
+        .result-box.flat {
+            margin-top: 0;
+        }
+
+        .copy-panel {
+            position: relative;
+            display: grid;
+            min-height: 100%;
+        }
+
+        .copy-panel .result-box {
+            height: 100%;
+            min-height: 138px;
+            padding: 15px 58px 15px 15px;
+        }
+
+        .copy-corner-btn {
+            position: absolute;
+            top: 12px;
+            right: 10px;
+            z-index: 2;
+            width: 38px;
+            height: 38px;
+            min-width: 38px;
+            min-height: 38px;
+            padding: 0;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.12);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            backdrop-filter: blur(6px);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            line-height: 1;
+        }
+
+        .copy-corner-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .ghost-output {
+            display: grid;
+            gap: 8px;
+            margin-top: 0;
+        }
+
+        .ghost-main {
+            font-size: 16px;
+            line-height: 1.4;
+            min-height: 138px;
+            display: block;
+            text-align: left;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+
+        .ghost-meta {
+            display: grid;
+            gap: 8px;
+            color: var(--muted);
+        }
+
+        .ghost-meta strong {
+            color: var(--title);
+        }
+
+        .field-inline {
+            display: grid;
+            grid-template-columns: 108px minmax(0, 1fr);
+            gap: 10px;
+            align-items: center;
+        }
+
+        .field-inline label {
+            font-size: 14px;
+            color: var(--muted);
+            white-space: nowrap;
+        }
+
+        #randomCharInput {
+            min-height: 138px;
+        }
+
+        #excludeCharsInput {
+            width: 100%;
+            min-width: 0;
+            min-height: 0;
+            resize: none;
+        }
+
+        table {
+            width: 100%;
+            margin-top: 16px;
+            border-collapse: collapse;
+            overflow: hidden;
+            border-radius: 10px;
+        }
+
+        th,
+        td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #edf2f7;
+        }
+
+        th {
+            background: #f8fafc;
+        }
+
+        tbody tr:hover {
+            background: #f1f4f8;
+            cursor: pointer;
+        }
+
+        .small-input {
+            width: 72px;
+            text-align: center;
+        }
+
+        .hint {
+            margin-top: 10px;
+            font-size: 14px;
+            color: var(--muted);
+        }
+
+        .page-footer {
+            margin: 28px auto 0;
+            text-align: center;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        #toast {
+            visibility: hidden;
+            min-width: 220px;
+            background: #333333;
+            color: #ffffff;
+            text-align: center;
+            border-radius: 8px;
+            padding: 12px;
+            position: fixed;
+            z-index: 10;
+            left: 50%;
+            bottom: 30px;
+            transform: translateX(-50%);
+        }
+
+        #toast.show {
+            visibility: visible;
+            animation: fadein 0.5s, fadeout 0.5s 2.5s;
+        }
+
+        @keyframes fadein {
+            from { bottom: 0; opacity: 0; }
+            to { bottom: 30px; opacity: 1; }
+        }
+
+        @keyframes fadeout {
+            from { bottom: 30px; opacity: 1; }
+            to { bottom: 0; opacity: 0; }
+        }
+
+        @media (max-width: 900px) {
+            body {
+                padding-top: 74px;
+            }
+
+            .section-split {
+                grid-template-columns: 1fr;
+            }
+
+            .field-inline {
+                grid-template-columns: 1fr;
+                gap: 6px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-actions">
+        <a class="lang-switch" href="ghost_Bits_CN.html">切换中文版本</a>
+        <a class="source-download" href="#" onclick="downloadCurrentPage(); return false;">Download source</a>
+    </div>
+    <div class="page">
+        <h1>Ghost Bits Analysis Toolkit</h1>
+        <div class="layout">
+            <section class="card">
+                <h2>1. Payload Converter</h2>
+                <p>Paste a Unicode-obfuscated payload to see how it looks after the lower 8 bits are preserved, which mirrors unsafe `char -> byte` truncation.</p>
+                <div class="section-split">
+                    <div class="section-column controls-stack">
+                        <textarea id="batchInput" placeholder="Enter a payload, for example: /霮严灵丰丰甲来">/霮严灵丰丰甲来</textarea>
+                        <div class="input-row">
+                            <button onclick="batchConvert()">Convert to Effective Runtime Bytes</button>
+                        </div>
+                    </div>
+                    <div class="section-column output-stack">
+                        <div class="copy-panel">
+                            <button class="copy-corner-btn" onclick="copyBatchOutput()" title="Copy result" aria-label="Copy result">⧉</button>
+                            <div id="batchOutput" class="result-box flat">Waiting for input...</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card">
+                <h2>2. Random Ghost String Generator</h2>
+                <p>Enter a string and generate a randomized Unicode ghost string whose characters share the same low byte; characters in the exclusion list remain unchanged.</p>
+                <div class="section-split">
+                    <div class="section-column controls-stack">
+                        <div class="input-row compact">
+                            <textarea id="randomCharInput" placeholder='Enter a source string, for example: /admin"test'>/admin"test</textarea>
+                        </div>
+                        <div class="input-row compact">
+                            <div class="field-inline">
+                                <label for="excludeCharsInput">Excluded chars</label>
+                                <input id="excludeCharsInput" type="text" value='/"' placeholder='For example: /"'>
+                            </div>
+                        </div>
+                        <div class="input-row compact">
+                            <button onclick="generateRandomGhost()">Generate Random Ghost String</button>
+                        </div>
+                    </div>
+                    <div class="section-column output-stack">
+                        <div class="ghost-output">
+                            <div class="copy-panel">
+                                <button class="copy-corner-btn" onclick="copyRandomGhost()" title="Copy result" aria-label="Copy result">⧉</button>
+                                <div id="randomGhostDisplay" class="result-box flat ghost-main">Waiting for generation...</div>
+                            </div>
+                            <div id="randomGhostMeta" class="ghost-meta">
+                                <div><strong>Input String:</strong> -</div>
+                                <div><strong>Excluded Characters:</strong> -</div>
+                                <div><strong>Conversion Summary:</strong> -</div>
+                                <div><strong>Notes:</strong> Outputs visible Chinese ghost characters only.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card full-width">
+                <h2>3. Single-Character Converter</h2>
+                <p>Enter a target ASCII character and enumerate all Unicode variants that share the same low byte. Click any row to copy the original ghost character.</p>
+                <div class="input-row">
+                    <input type="text" id="singleCharInput" class="small-input" maxlength="1" value="j">
+                    <button onclick="findGhostBits()">Enumerate Variants</button>
+                    <button class="success" onclick="downloadCSV()">Download CSV</button>
+                </div>
+                <div class="hint">CSV export uses a browser-friendly local download flow. If the table is empty, run a search first.</div>
+                <table id="resultTable">
+                    <thead>
+                        <tr>
+                            <th>Unicode (Hex)</th>
+                            <th>Display Character</th>
+                            <th>High Byte</th>
+                            <th>Low Byte (Target)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </section>
+        </div>
+        <div class="page-footer">Author: s1kSec</div>
+    </div>
+
+    <div id="toast">Copied to clipboard.</div>
+
+    <script>
+        let currentTableData = [];
+        let lastBatchOutput = "";
+        let lastRandomGhostChar = "";
+
+        function isVisibleCharacter(charStr) {
+            return charStr.replace(/[\x00-\x1F\x7F-\x9F\u200B-\u200D\u2060\uFEFF]/g, "") !== "";
+        }
+
+        function getCodePoint(charStr) {
+            return charStr.charCodeAt(0);
+        }
+
+        function isChineseCharacter(charStr) {
+            const codePoint = getCodePoint(charStr);
+            return (
+                (codePoint >= 0x3400 && codePoint <= 0x4DBF) ||
+                (codePoint >= 0x4E00 && codePoint <= 0x9FFF) ||
+                (codePoint >= 0xF900 && codePoint <= 0xFAFF)
+            );
+        }
+
+        function formatUnicode(codePoint) {
+            return `U+${codePoint.toString(16).toUpperCase().padStart(4, "0")}`;
+        }
+
+        function formatHexByte(value) {
+            return `0x${value.toString(16).toUpperCase().padStart(2, "0")}`;
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById("toast");
+            toast.innerText = message;
+            toast.className = "show";
+            setTimeout(() => {
+                toast.className = toast.className.replace("show", "");
+            }, 3000);
+        }
+
+        function copyToClipboard(text, successMessage) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast(successMessage || `Copied character: ${text}`);
+            }).catch(() => {
+                alert("Copy failed. Please check the browser clipboard permissions.");
+            });
+        }
+
+        function getGhostCandidates(targetChar, options) {
+            const targetByte = targetChar.charCodeAt(0) & 0xFF;
+            const candidates = [];
+            const includeInvisible = options.includeInvisible;
+            const chineseMode = options.chineseMode;
+
+            for (let i = 0; i < 65536; i++) {
+                if ((i & 0xFF) !== targetByte || i === targetByte) {
+                    continue;
+                }
+
+                const charStr = String.fromCharCode(i);
+                const visible = isVisibleCharacter(charStr);
+                if (!includeInvisible && !visible) {
+                    continue;
+                }
+
+                const chinese = isChineseCharacter(charStr);
+                if (chineseMode === "only" && !chinese) {
+                    continue;
+                }
+                if (chineseMode === "exclude" && chinese) {
+                    continue;
+                }
+
+                candidates.push({
+                    codePoint: i,
+                    charStr,
+                    visible,
+                    chinese,
+                    highByte: (i >> 8) & 0xFF,
+                    lowByte: targetByte
+                });
+            }
+
+            return candidates;
+        }
+
+        function batchConvert() {
+            const input = document.getElementById("batchInput").value;
+            let output = "";
+            for (let i = 0; i < input.length; i++) {
+                const low8 = input.charCodeAt(i) & 0xFF;
+                output += String.fromCharCode(low8);
+            }
+            lastBatchOutput = output;
+            document.getElementById("batchOutput").textContent = output || "Waiting for input...";
+        }
+
+        function copyBatchOutput() {
+            if (!lastBatchOutput) {
+                alert("There is no converted output to copy yet.");
+                return;
+            }
+            copyToClipboard(lastBatchOutput, "Converted output copied.");
+        }
+
+        function generateRandomGhost() {
+            const input = document.getElementById("randomCharInput").value;
+            if (!input) {
+                alert("Please enter a source string.");
+                return;
+            }
+
+            const excludeChars = document.getElementById("excludeCharsInput").value;
+            const options = {
+                includeInvisible: false,
+                chineseMode: "only"
+            };
+
+            const excludedSet = new Set(Array.from(excludeChars));
+            const unresolvedChars = [];
+            let convertedCount = 0;
+            let excludedCount = 0;
+            let fallbackCount = 0;
+            let output = "";
+
+            Array.from(input).forEach((char) => {
+                if (excludedSet.has(char)) {
+                    output += char;
+                    excludedCount += 1;
+                    return;
+                }
+
+                const candidates = getGhostCandidates(char, options);
+                if (candidates.length === 0) {
+                    output += char;
+                    fallbackCount += 1;
+                    unresolvedChars.push(char);
+                    return;
+                }
+
+                const picked = candidates[Math.floor(Math.random() * candidates.length)];
+                output += picked.charStr;
+                convertedCount += 1;
+            });
+
+            lastRandomGhostChar = output;
+
+            document.getElementById("randomGhostDisplay").textContent = output || "Waiting for generation...";
+            document.getElementById("randomGhostMeta").innerHTML = `
+                <div><strong>Input String:</strong> ${input}</div>
+                <div><strong>Excluded Characters:</strong> ${excludeChars || "[empty]"}</div>
+                <div><strong>Conversion Summary:</strong> Converted ${convertedCount}, preserved by exclusion ${excludedCount}, preserved due to rule limitations ${fallbackCount}</div>
+                <div><strong>Notes:</strong> ${describeGeneratorRules(options, unresolvedChars)}</div>
+            `;
+        }
+
+        function copyRandomGhost() {
+            if (!lastRandomGhostChar) {
+                alert("Please generate a ghost string first.");
+                return;
+            }
+            copyToClipboard(lastRandomGhostChar, "Ghost string copied.");
+        }
+
+        function describeGeneratorRules(options, unresolvedChars) {
+            const ruleParts = [
+                "Visible characters only",
+                "Chinese characters only"
+            ];
+
+            if (unresolvedChars.length === 0) {
+                return `${ruleParts.join(", ")}.`;
+            }
+
+            const uniqueChars = Array.from(new Set(unresolvedChars));
+            return `${ruleParts.join(", ")}. The following source characters had no valid candidates under the current rules and were preserved as-is: ${uniqueChars.join(" ")}`;
+        }
+
+        function findGhostBits() {
+            const char = document.getElementById("singleCharInput").value;
+            if (!char) {
+                alert("Please enter one character.");
+                return;
+            }
+
+            const tbody = document.getElementById("tableBody");
+            tbody.innerHTML = "";
+            currentTableData = [];
+
+            const candidates = getGhostCandidates(char, { includeInvisible: true, chineseMode: "all" });
+            candidates.forEach((item) => {
+                const displayChar = item.visible ? item.charStr : "[Invisible Character]";
+                currentTableData.push([
+                    formatUnicode(item.codePoint),
+                    displayChar,
+                    formatHexByte(item.highByte),
+                    formatHexByte(item.lowByte)
+                ]);
+
+                const tr = document.createElement("tr");
+                tr.onclick = () => copyToClipboard(item.charStr, "Character copied.");
+                tr.innerHTML = `
+                    <td>${formatUnicode(item.codePoint)}</td>
+                    <td style="font-size: 1.2em;">${displayChar}</td>
+                    <td>${formatHexByte(item.highByte)}</td>
+                    <td>${formatHexByte(item.lowByte)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function escapeCSVField(value) {
+            return `"${String(value).replace(/"/g, '""')}"`;
+        }
+
+        function getCsvFilePrefix(char) {
+            if (!char) {
+                return "unknown";
+            }
+
+            if (/^[a-zA-Z0-9_-]$/.test(char)) {
+                return char;
+            }
+
+            return `U${char.charCodeAt(0).toString(16).toUpperCase().padStart(4, "0")}`;
+        }
+
+        function downloadCurrentPage() {
+            const doctype = "<!DOCTYPE html>\n";
+            const htmlContent = doctype + document.documentElement.outerHTML;
+            const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8;" });
+            const downloadUrl = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            const filename = (window.location.pathname.split("/").pop() || "ghost_bits.html");
+
+            link.href = downloadUrl;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(downloadUrl);
+        }
+
+        function downloadCSV() {
+            if (currentTableData.length === 0) {
+                alert("Please enumerate the variants first.");
+                return;
+            }
+
+            const targetChar = document.getElementById("singleCharInput").value;
+            const filePrefix = getCsvFilePrefix(targetChar);
+
+            const header = ["Unicode", "Character", "High Byte", "Low Byte"];
+            const lines = [
+                header.map(escapeCSVField).join(","),
+                ...currentTableData.map((row) => row.map(escapeCSVField).join(","))
+            ];
+            const csvContent = "\uFEFF" + lines.join("\r\n");
+            const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+            const downloadUrl = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+
+            link.href = downloadUrl;
+            link.download = `${filePrefix}_ghost_bits_export.csv`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(downloadUrl);
+        }
+
+        window.onload = function () {
+            batchConvert();
+            generateRandomGhost();
+            findGhostBits();
+        };
+    </script>
+</body>
+</html>
