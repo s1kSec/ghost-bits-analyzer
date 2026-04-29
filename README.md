@@ -19,6 +19,10 @@ This tool is based on the research presented at Black Hat ASIA 2026:https://i.bl
 
 ## usage:
 
+https://s1ksec.github.io/ghost-bits-analyzer/ghost_Bits_EN.html
+
+
+
 <img width="2560" height="1389" alt="image" src="https://github.com/user-attachments/assets/0f6b8cb3-5606-4a6e-bc55-af51a5e95032" />
 
 
@@ -33,5 +37,6 @@ This tool is based on the research presented at Black Hat ASIA 2026:https://i.bl
 该工具基于在黑帽亚洲2026上展示的研究:https://i.blackhat.com/Asia-26/Presentations/Asia-26-Bai-Cast-Attack-Ghost-Bits-4.23.pdf
 
 ## 使用:
+https://s1ksec.github.io/ghost-bits-analyzer/ghost_Bits_CN.html
 
 <img width="2560" height="1389" alt="image" src="https://github.com/user-attachments/assets/955cbc74-2a19-401b-86e0-3862cd282b30" />
